@@ -18,7 +18,7 @@ app.add_middleware(
 
 
 class WorkoutSet(BaseModel):
-    lbs: float
+    lbs: int
     reps: int
 
 
@@ -40,7 +40,7 @@ async def submit_workout(
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
-    json_string = json.dumps(workout.model_dump(), sort_keys=True)
+    json_string = json.dumps(workout.model_dump(), sort_keys=True, separators=(',', ':'))
     hash_digest = hashlib.sha256(json_string.encode()).hexdigest()
 
     return {"hash": hash_digest}
