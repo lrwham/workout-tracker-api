@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+from pydantic import BaseModel
 from sqlalchemy import String, Float, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -54,3 +55,17 @@ class WorkoutSet(Base):
     reps: Mapped[int | None] = mapped_column(Integer, default=None)
 
     exercise: Mapped["Exercise"] = relationship(back_populates="sets")
+
+class ExerciseSubmission(BaseModel):
+    name: str
+    sets: list["WorkoutSetSubmission"]
+
+
+class WorkoutSetSubmission(BaseModel):
+    lbs: float | None
+    reps: int | None
+
+
+class WorkoutSubmission(BaseModel):
+    date: str
+    exercises: list[ExerciseSubmission]
