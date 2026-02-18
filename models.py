@@ -1,26 +1,56 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date
-from sqlalchemy.orm import relationship
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import String, Float, Integer, DateTime, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
 
 class Workout(Base):
     __tablename__ = "workouts"
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(String, nullable=False)
-    hash = Column(String, nullable=False)
-    exercises = relationship("Exercise", back_populates="workout", cascade="all, delete-orphan")
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    date: Mapped[str] = mapped_column(String)
+    hash: Mapped[str] = mapped_column(String)
+
+    exercises: Mapped[list["Exercise"]] = relationship(
+        back_populates="workout", cascade="all, delete-orphan"
+    )
+
 
 class Exercise(Base):
     __tablename__ = "exercises"
-    id = Column(Integer, primary_key=True, index=True)
-    workout_id = Column(Integer, ForeignKey("workouts.id"), nullable=False)
-    name = Column(String, nullable=False)
-    workout = relationship("Workout", back_populates="exercises")
-    sets = relationship("WorkoutSet", back_populates="exercise", cascade="all, delete-orphan")
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    workout_id: Mapped[int] = mapped_column(ForeignKey("workouts.id"))
+    name: Mapped[str] = mapped_column(String)
+
+    workout: Mapped["Workout"] = relationship(back_populates="exercises")
+    sets: Mapped[list["WorkoutSet"]] = relationship(
+        back_populates="exercise", cascade="all, delete-orphan"
+    )
+
 
 class WorkoutSet(Base):
     __tablename__ = "workout_sets"
-    id = Column(Integer, primary_key=True, index=True)
-    exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
-    lbs = Column(Float, nullable=False)
-    reps = Column(Integer, nullable=False)
-    exercise = relationship("Exercise", back_populates="sets")
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    exercise_id: Mapped[int] = mapped_column(ForeignKey("exercises.id"))
+    lbs: Mapped[float | None] = mapped_column(Float, default=None)
+    reps: Mapped[int | None] = mapped_column(Integer, default=None)
+
+    exercise: Mapped["Exercise"] = relationship(back_populates="sets")
