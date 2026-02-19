@@ -23,6 +23,38 @@ class User(Base):
     workouts: Mapped[list["Workout"]] = relationship(back_populates="user")
 
 
+class WorkoutTemplate(Base):
+    __tablename__ = "workout_templates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    label: Mapped[str] = mapped_column(String)  # "Day B"
+    focus: Mapped[str] = mapped_column(String)  # "Lower Body"
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    user: Mapped["User"] = relationship()
+    exercises: Mapped[list["TemplateExercise"]] = relationship(
+        back_populates="template",
+        cascade="all, delete-orphan",
+        order_by="TemplateExercise.position",
+    )
+
+
+class TemplateExercise(Base):
+    __tablename__ = "template_exercises"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    template_id: Mapped[int] = mapped_column(ForeignKey("workout_templates.id"))
+    name: Mapped[str] = mapped_column(String)  # "Squat"
+    target_weight: Mapped[float] = mapped_column(Float)  # 165
+    num_sets: Mapped[int] = mapped_column(Integer)  # 3
+    position: Mapped[int] = mapped_column(Integer)  # ordering
+
+    template: Mapped["WorkoutTemplate"] = relationship(back_populates="exercises")
+
+
 class Workout(Base):
     __tablename__ = "workouts"
 
@@ -74,3 +106,32 @@ class WorkoutSetSubmission(BaseModel):
 class WorkoutSubmission(BaseModel):
     date: str
     exercises: list[ExerciseSubmission]
+
+class TemplateExerciseCreate(BaseModel):
+    name: str
+    target_weight: float
+    num_sets: int
+
+class TemplateCreate(BaseModel):
+    label: str
+    focus: str
+    exercises: list[TemplateExerciseCreate]
+
+class TemplateExerciseResponse(BaseModel):
+    id: int
+    name: str
+    target_weight: float
+    num_sets: int
+    position: int
+
+    class Config:
+        from_attributes = True
+
+class TemplateResponse(BaseModel):
+    id: int
+    label: str
+    focus: str
+    exercises: list[TemplateExerciseResponse]
+
+    class Config:
+        from_attributes = True
