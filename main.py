@@ -1,42 +1,43 @@
 import hashlib
 import json
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from models import Exercise, Workout, WorkoutSet, WorkoutSubmission
+from auth import get_current_user, get_db, verify_password, create_access_token
+from models import Exercise, Workout, WorkoutSet, WorkoutSubmission, User
 from database import Base, engine, SessionLocal
 
 app = FastAPI()
 
-API_KEY = "dev-workout-key-123"
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
-    allow_methods=["POST"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_methods=["POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 Base.metadata.create_all(bind=engine)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
+@app.post("/token")
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = create_access_token({"sub": user.email})
+    return {"access_token": token, "token_type": "bearer"}
 
 @app.post("/submit")
 async def submit_workout(
     workout: WorkoutSubmission,
-    x_api_key: str = Header(),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-):
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    ):
 
     # Hashing logic — unchanged from original
     json_string = json.dumps(workout.model_dump(), sort_keys=True, separators=(',', ':'))
