@@ -13,10 +13,9 @@ from models import User
 load_dotenv()
 SECRET_KEY = os.environ.get("JWT_SECRET", "dev-secret-change-me")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRES_MINUTES = int(os.environ.get("JWT_EXPIRES_IN",3600))
+ACCESS_TOKEN_EXPIRES_MINUTES = int(os.environ.get("JWT_EXPIRES_IN_MINUTES",60))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 
 def get_db():
     db = SessionLocal()
