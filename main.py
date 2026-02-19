@@ -44,7 +44,8 @@ async def submit_workout(
     hash_digest = hashlib.sha256(json_string.encode()).hexdigest()
 
     # Persist to database
-    db_workout = Workout(date=workout.date, hash=hash_digest)
+    db_workout = Workout(date=workout.date, hash=hash_digest, user_id=current_user.id)
+    
     for exercise in workout.exercises:
         db_exercise = Exercise(name=exercise.name)
         for s in exercise.sets:

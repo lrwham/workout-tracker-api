@@ -20,14 +20,18 @@ class User(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
+    workouts: Mapped[list["Workout"]] = relationship(back_populates="user")
+
 
 class Workout(Base):
     __tablename__ = "workouts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
     date: Mapped[str] = mapped_column(String)
     hash: Mapped[str] = mapped_column(String)
 
+    user: Mapped["User"] = relationship(back_populates="workouts")
     exercises: Mapped[list["Exercise"]] = relationship(
         back_populates="workout", cascade="all, delete-orphan"
     )
@@ -55,6 +59,7 @@ class WorkoutSet(Base):
     reps: Mapped[int | None] = mapped_column(Integer, default=None)
 
     exercise: Mapped["Exercise"] = relationship(back_populates="sets")
+
 
 class ExerciseSubmission(BaseModel):
     name: str
